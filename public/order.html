@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Order</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .form-container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Place Order</h1>
+    <nav>
+        <a href="books.html">Books</a>
+        <a href="register.html">Register Customer</a>
+        <a href="order.html">Place Order</a>
+    </nav>
+
+    <div class="form-container">
+        <form id="orderForm">
+            <select id="customerSelect" required>
+                <option value="">Select Customer</option>
+            </select>
+            <select id="bookSelect" required>
+                <option value="">Select Book</option>
+            </select>
+            <input type="number" id="quantity" placeholder="Quantity" required>
+            <button type="submit">Place Order</button>
+        </form>
+        <div id="orderMessage" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        const customerApiUrl = 'http://localhost:3000/api/customers';
+        const bookApiUrl = 'http://localhost:3000/api/books';
+        const orderApiUrl = 'http://localhost:3000/api/orders';
+
+        
+        const fetchOptions = async () => {
+            const customerResponse = await fetch(customerApiUrl);
+            const customers = await customerResponse.json();
+            const customerSelect = document.getElementById('customerSelect');
+
+            customers.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.id;
+                option.textContent = customer.name;
+                customerSelect.appendChild(option);
+            });
+
+            const bookResponse = await fetch(bookApiUrl);
+            const books = await bookResponse.json();
+            const bookSelect = document.getElementById('bookSelect');
+
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = `${book.title} by ${book.author}`;
+                bookSelect.appendChild(option);
+            });
+        };
+
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newOrder = {
+                customer_id: document.getElementById('customerSelect').value,
+                book_id: document.getElementById('bookSelect').value,
+                quantity: document.getElementById('quantity').value
+            };
+            const response = await fetch(orderApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newOrder)
+            });
+            const result = await response.json();
+            const orderMessageDiv = document.getElementById('orderMessage');
+            if (response.ok) {
+                orderMessageDiv.innerHTML = `Order placed successfully for ${result.quantity} copies.`;
+            } else {
+                orderMessageDiv.innerHTML = `Error: ${result.error}`;
+            }
+            e.target.reset(); 
+        });
+
+        fetchOptions(); 
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .form-container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Book Inventory</h1>
+    <nav>
+        <a href="books.html">Books</a>
+        <a href="register.html">Register Customer</a>
+        <a href="order.html">Place Order</a>
+    </nav>
+
+    <table id="bookTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="form-container">
+        <h2>Add New Book</h2>
+        <form id="bookForm">
+            <input type="text" id="title" placeholder="Title" required>
+            <input type="text" id="author" placeholder="Author" required>
+            <input type="number" id="price" placeholder="Price" required>
+            <input type="number" id="stock" placeholder="Stock" required>
+            <button type="submit">Add Book</button>
+        </form>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000/api/books';
+
+        
+        const fetchBooks = async () => {
+            const response = await fetch(apiUrl);
+            const books = await response.json();
+            const tableBody = document.querySelector('#bookTable tbody');
+            tableBody.innerHTML = '';
+            books.forEach(book => {
+                const row = `
+                    <tr>
+                        <td>${book.id}</td>
+                        <td>${book.title}</td>
+                        <td>${book.author}</td>
+                        <td>${book.price}</td>
+                        <td>${book.stock}</td>
+                        <td>
+                            <button onclick="editBook(${book.id})">Edit</button>
+                            <button onclick="deleteBook(${book.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        };
+
+        // Add new book
+        document.getElementById('bookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newBook = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                price: document.getElementById('price').value,
+                stock: document.getElementById('stock').value
+            };
+            await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newBook)
+            });
+            fetchBooks(); // Refresh the book list
+            e.target.reset(); // Clear the form
+        });
+
+        // Edit book
+        const editBook = async (id) => {
+            const book = await (await fetch(`${apiUrl}/${id}`)).json();
+            document.getElementById('title').value = book.title;
+            document.getElementById('author').value = book.author;
+            document.getElementById('price').value = book.price;
+            document.getElementById('stock').value = book.stock;
+            document.getElementById('bookForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await fetch(`${apiUrl}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: document.getElementById('title').value,
+                        author: document.getElementById('author').value,
+                        price: document.getElementById('price').value,
+                        stock: document.getElementById('stock').value
+                    })
+                });
+                fetchBooks(); 
+                e.target.reset(); 
+                document.getElementById('bookForm').onsubmit = null; 
+            };
+        };
+
+        
+        const deleteBook = async (id) => {
+            if (confirm('Are you sure you want to delete this book?')) {
+                await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+                fetchBooks(); 
+            }
+        };
+
+        fetchBooks(); 
+    </script>
+</body>
+</html>
